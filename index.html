@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PS5 BLE Typist</title>
+
+  <style>
+    :root {
+      --accent: #007aff;
+      --disabled: #ccc;
+      --bg: #f2f2f2;
+      --text: #333;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+        Arial, sans-serif;
+      background: var(--bg);
+      margin: 0;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1em;
+    }
+    h1 {
+      font-size: 1.5em;
+      text-align: center;
+      margin: 0 0 1em;
+      color: var(--text);
+    }
+    .button-group {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 0.75em;
+    }
+    button {
+      flex: 1;
+      padding: 0.75em;
+      font-size: 1em;
+      border: none;
+      border-radius: 0.5em;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: var(--disabled);
+      cursor: not-allowed;
+    }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75em;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 0.5em;
+      margin-bottom: 0.75em;
+      resize: vertical;
+    }
+    #status {
+      margin-top: 1em;
+      font-size: 0.9em;
+      color: #555;
+      text-align: center;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PS5 BLE Typist</h1>
+
+    <div class="button-group">
+      <button id="connect">Connect</button>
+      <button id="disconnect" disabled>Disconnect</button>
+    </div>
+
+    <textarea id="text" rows="4"
+              placeholder="Type your message…"
+              autocapitalize="sentences"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"></textarea>
+
+    <div class="button-group">
+      <button id="send" disabled>Send</button>
+    </div>
+
+    <p id="status">Not connected</p>
+  </div>
+
+  <script>
+    /* ---------- Constants ---------- */
+    const UART_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+    const TX_CHAR      = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+    /* ---------- State ---------- */
+    let device           = null;
+    let txCharacteristic = null;
+    let reconnectTimer   = null;
+
+    /* ---------- UI shortcuts ---------- */
+    const statusEl      = document.getElementById('status');
+    const btnConnect    = document.getElementById('connect');
+    const btnDisconnect = document.getElementById('disconnect');
+    const btnSend       = document.getElementById('send');
+    const textarea      = document.getElementById('text');
+
+    /* ---------- Helpers ---------- */
+    function uiConnected(flag) {
+      btnSend.disabled       = !flag;
+      btnDisconnect.disabled = !flag;
+    }
+
+    function scheduleReconnect() {
+      if (reconnectTimer) return;
+      reconnectTimer = setTimeout(async () => {
+        reconnectTimer = null;
+        if (device) {
+          statusEl.textContent = 'Reconnecting…';
+          await attachCharacteristics(device).catch(scheduleReconnect);
+        }
+      }, 3000);
+    }
+
+    /* ---------- BLE attach / reconnect ---------- */
+    async function attachCharacteristics(dev, attempt = 1) {
+      try {
+        if (!dev.gatt.connected) await dev.gatt.connect();
+
+        /* give ESP32 a moment to finish adding services */
+        await new Promise(r => setTimeout(r, 250));
+
+        const service = await dev.gatt.getPrimaryService(UART_SERVICE);
+        txCharacteristic = await service.getCharacteristic(TX_CHAR);
+
+        statusEl.textContent = 'Connected ✔';
+        uiConnected(true);
+
+        dev.removeEventListener('gattserverdisconnected', onDisconnected);
+        dev.addEventListener   ('gattserverdisconnected', onDisconnected);
+
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+      } catch (err) {
+        console.error('Attach failed:', err);
+        statusEl.textContent =
+          'Attach error: ' + (err?.message || String(err));
+
+        if (attempt === 1) {
+          setTimeout(() => attachCharacteristics(dev, 2), 1500);
+        } else {
+          scheduleReconnect();
+        }
+      }
+    }
+
+    function onDisconnected() {
+      statusEl.textContent = 'Disconnected, retrying…';
+      txCharacteristic = null;
+      uiConnected(false);
+      scheduleReconnect();
+    }
+
+    /* ---------- Connect / Disconnect ---------- */
+    async function connect() {
+      statusEl.textContent = 'Connecting…';
+      try {
+        if (navigator.bluetooth?.getDevices) {
+          const known = await navigator.bluetooth.getDevices();
+          const match = known.find(d => d.name === 'Typist');
+          if (match) { device = match; await attachCharacteristics(match); return; }
+        }
+
+        device = await navigator.bluetooth.requestDevice({
+          filters:          [{ services: [UART_SERVICE] }],
+          optionalServices: [UART_SERVICE]
+        });
+        await attachCharacteristics(device);
+
+      } catch (err) {
+        statusEl.textContent = 'Connect error: ' + (err?.message || String(err));
+      }
+    }
+
+    function disconnect() {
+      if (device?.gatt.connected) device.gatt.disconnect();
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      uiConnected(false);
+      statusEl.textContent = 'Disconnected';
+    }
+
+    /* ---------- Send text ---------- */
+    async function send() {
+      if (!txCharacteristic) { alert('Please connect first!'); return; }
+      const payload = new TextEncoder().encode(textarea.value + '\r');
+
+      try {
+        for (let i = 0; i < payload.length; i += 20) {
+          await txCharacteristic.writeValue(payload.slice(i, i + 20));
+        }
+        statusEl.textContent = 'Sent ✔';
+        textarea.value = '';
+        textarea.focus();
+      } catch (err) {
+        statusEl.textContent = 'Send error: ' + (err?.message || String(err));
+      }
+    }
+
+    /* ---------- Event listeners ---------- */
+    btnConnect   .addEventListener('click', () => {
+      if (!navigator.bluetooth) {
+        statusEl.textContent = 'Web-Bluetooth not available.';
+        return;
+      }
+      connect();
+    });
+    btnDisconnect.addEventListener('click', disconnect);
+    btnSend      .addEventListener('click', send);
+
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') disconnect();
+    });
+    window.addEventListener('beforeunload', disconnect);
+
+    /* ---------- Auto-reconnect on load ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      if (navigator.bluetooth?.getDevices) {
+        navigator.bluetooth.getDevices()
+          .then(list => list.find(d => d.name === 'Typist'))
+          .then(d => d && attachCharacteristics(d))
+          .catch(console.warn);
+      }
+    });
+  </script>
+</body>
+</html>
