@@ -7,22 +7,27 @@
   <title>Typist</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="page">
     <header>
       <h1>Typist</h1>
       <p id="status">Not connected</p>
     </header>
+
     <div class="input-bar">
       <textarea id="text" rows="4" placeholder="Type your message…"
-                autocapitalize="sentences" autocomplete="off"
-                autocorrect="off" spellcheck="false"></textarea>
+                autocapitalize="sentences" autocomplete="on" inputmode="text"
+                spellcheck="false"></textarea>
+
       <div class="send-row">
         <button id="send" disabled>Send</button>
-        <button id="toggle" data-state="disconnected">🔌</button>
+        <button id="sendReplace" disabled>Replace</button>
+        <button id="toggle" data-state="disconnected">🛜</button>
       </div>
     </div>
   </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

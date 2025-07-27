@@ -1,114 +1,68 @@
-  :root {
-      --accent: #007aff;
-      --disabled: #bbb;
-      --bg: #f2f2f2;
-      --text: #333
-  }
+:root {
+    --accent: #007aff;
+    --disabled: #bbb;
+    --bg: #f2f2f2;
+    --text: #333;
+}
 
-  html,
-  body {
-      height: 100%;
-      margin: 0
-  }
+html, body { height: 100%; margin: 0 }
+html       { overflow: hidden }
+body {
+    background: var(--bg);
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
 
-  html {
-      overflow-y: hidden;
-      overflow-x: hidden;
-  }
+.page {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+}
 
-  body {
-      background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif
-  }
+/* ----- sticky header ----- */
+header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    padding: 1em 1em .4em;
+    text-align: center;
+}
 
-  .page {
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      max-width: 480px;
-      margin: 0 auto
-  }
+h1      { margin: 0; font-size: 1.5em; color: var(--text) }
+#status { margin:.4em 0 0; font-size:.9em; color:#555; min-height:1.3em }
 
-  /* ----- sticky header ----- */
-  header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--bg);
-      padding: 1em 1em .4em;
-      text-align: center
-  }
+/* ----- bottom input bar ----- */
+.input-bar {
+    margin-top: auto;
+    padding: 0 1em 1em;
+    display: flex;
+    flex-direction: column;
+    gap: .6em;
+}
 
-  h1 {
-      margin: 0;
-      font-size: 1.5em;
-      color: var(--text)
-  }
+textarea {
+    width: 100%; box-sizing: border-box;
+    padding:.75em; font-size:1em;
+    border:1px solid #ccc; border-radius:.5em; resize:vertical;
+}
 
-  #status {
-      margin: .4em 0 0;
-      font-size: .9em;
-      color: #555;
-      min-height: 1.3em
-  }
+.send-row { display:flex; gap:.5em }
 
-  /* ----- bottom input bar ----- */
-  .input-bar {
-      margin-top: auto;
-      padding: 0 1em 1em;
-      display: flex;
-      flex-direction: column;
-      gap: .6em
-  }
+#send, #sendReplace {
+    flex: 1;
+    padding:.75em; font-size:1em;
+    border:0; border-radius:.5em;
+    background: var(--accent); color:#fff;
+    cursor:pointer;
+}
+#send:disabled, #sendReplace:disabled { background: var(--disabled); cursor:not-allowed }
 
-  textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: .75em;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: .5em;
-      resize: vertical
-  }
-
-  .send-row {
-      display: flex;
-      gap: .5em
-  }
-
-  #send {
-      flex: 1;
-      padding: .75em;
-      font-size: 1em;
-      border: 0;
-      border-radius: .5em;
-      background: var(--accent);
-      color: #fff;
-      cursor: pointer
-  }
-
-  #send:disabled {
-      background: var(--disabled);
-      cursor: not-allowed
-  }
-
-  #toggle {
-      flex: 0 0 3em;
-      padding: .75em .3em;
-      font-size: 1.25em;
-      border: 0;
-      border-radius: .5em;
-      background: var(--accent);
-      color: #fff;
-      cursor: pointer
-  }
-
-  #toggle[data-state="connecting"] {
-      background: #ffa500;
-      cursor: progress
-  }
-
-  #toggle:disabled {
-      background: var(--disabled);
-      cursor: not-allowed
-  }
+#toggle {
+    flex: 0 0 3em;
+    padding:.75em .3em; font-size:1.25em;
+    border:0; border-radius:.5em;
+    background: var(--accent); color:#fff;
+    cursor:pointer;
+}
+#toggle[data-state="connecting"] { background:#ffa500; cursor:progress }
+#toggle:disabled               { background:var(--disabled); cursor:not-allowed }
