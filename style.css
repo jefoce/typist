@@ -1,12 +1,37 @@
 :root { --gap:12px; --bg:#0b0d10; --fg:#e6eaef; --muted:#a9b0ba; --ac:#4ea1ff; --ok:#2ecc71; --dock-h:168px; }
 * { box-sizing:border-box; }
-html, body { margin:0; padding:0; background:var(--bg); color:var(--fg); font:14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu; -webkit-text-size-adjust:100%; }
+/* Lock the page; use dynamic viewport units for mobile (with fallback) */
+html, body {
+  height: 100%;
+  margin:0; padding:0; background:var(--bg); color:var(--fg); font:14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu; -webkit-text-size-adjust:100%;
+}
+body{
+  /* 3 rows: header | main (scrolls) | dock */
+  height: 100dvh;                   /* dynamic viewport plays nicest on iOS/Bluefy */
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;                 /* page itself doesn't scroll */
+}
+
+/* <main> becomes the only scrollable area */
+main {
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;                      /* gaps between sections */
+  padding: 16px;
+  padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom) + 16px);
+}
+
 h1 { margin:0; font-size:18px; }
 h2 { margin:0; font-size:16px; }
 button { background:#18202a; color:var(--fg); border:1px solid #263140; border-radius:8px; padding:8px 12px; cursor:pointer; }
 button:hover { border-color:var(--ac); }
 
-main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; padding-bottom:calc(var(--dock-h) + 16px); }
+/* main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; padding-bottom:calc(var(--dock-h) + 16px); } */
 
 /* Header colors from old */
 .topbar{
@@ -18,13 +43,13 @@ main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; pad
   border-bottom:1px solid #1a1f26;
   position:sticky;
   top:0;
-  background:#0b0d10d0;
+  background:rgba(5,8,12,.6);
   backdrop-filter:saturate(140%) blur(6px);
   -webkit-backdrop-filter:saturate(140%) blur(6px);
   z-index:5;
   color:#e5e7eb;
 }
-.topbar .left{ justify-self:start; }
+.topbar .left{ display:flex; align-items:center; gap:8px; }
 .topbar .center{ justify-self:center; text-align:center; }
 .topbar .right{ justify-self:end; }
 .topbar .appTitle{ margin:0; font-size:16px; font-weight:600; color:#e5e7eb; }
@@ -37,15 +62,99 @@ main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; pad
   color:#e5e7eb;
   cursor:pointer;
 }
-.topbar .btn:hover{ background:#0f1318; border-color:#3a414c; }
+.topbar .btn:hover{ background:rgba(5,8,12,.6); border-color:#3a414c; }
 .topbar .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+
+/* small icon button to match header style */
+.icon-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:8px;
+  border:1px solid #2a3039; background:transparent; color:#e5e7eb;
+  cursor:pointer;
+}
+.icon-btn:hover{ background:#0f1318; border-color:#3a414c; }
+
+/* cheat dialog content styling (reuses dialog base styles already present) */
+/* cheat dialog layout */
+.cheats h4{ margin:8px 0 6px 0; font-size:13px; opacity:.9; }
+.cheats ul{ margin:0; padding-left:18px; }
+.cheats li{ margin:4px 0; }
+.cheats code{
+  background:#10161d; border:1px solid #1a222d; border-radius:6px;
+  padding:2px 6px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.cheats pre{
+  background:#0f141a; border:1px solid #1a222d; border-radius:8px;
+  padding:10px; margin:6px 0; white-space:pre-wrap; word-break:break-word;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.cheats .muted{ color:#a9b0ba; opacity:.85; font-size:12px; margin-top:6px; }
+
+.cheat-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px 18px;
+}
+.cheat-grid .span-2{ grid-column: 1 / -1; }
+
+/* dialog width already widened earlier; this keeps it comfy */
+dialog#cheatDialog { width: min(760px, 96vw); }
 
 /* Panels */
 .panel { background:#0e1319; border:1px solid #1a222d; border-radius:14px; padding:12px; display:grid; gap:10px; }
+.panel.collapsible .collapse-body{
+  max-height: none;                 /* ensure full height inside the scrolling main */
+}
+
+/* hide real checkbox but keep :checked */
+.collapse-check{
+  all: unset;
+  position:absolute; left:-9999px; top:auto;
+  width:1px; height:1px; opacity:0; pointer-events:none;
+  -webkit-appearance:none; appearance:none;
+}
+
+/* header row — override label defaults */
+.collapse-bar{
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:space-between;
+  margin:0 !important;
+  padding:10px 14px;           /* tighter vertical space */
+  background:transparent; border:0; color:inherit; cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.collapse-bar h2{ margin:0; font-size:18px; line-height:1.2; }
+
+/* chevron: truly centered */
+.collapse-bar .chev{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px; height:20px;     /* fixes vertical misalignment */
+  transition:transform .2s ease; opacity:.85;
+}
+
+/* body: zero height when closed; divider handled by header when open */
+.collapse-body{ display:none; padding:12px; border-top:1px solid #1a222d; }
+.collapse-check:checked ~ .collapse-body{ display:block; border-top:0; }
+
+/* add divider under header only when open for clean alignment */
+.collapse-check:checked + .collapse-bar{ border-bottom:1px solid #1a222d; padding-bottom: 25px; }
+
+/* rotate chevron when open */
+.collapse-check:checked + .collapse-bar .chev{ transform:rotate(180deg); }
+
+/* ensure other labels don't interfere */
+label:not(.collapse-bar){ display:flex; flex-direction:column; gap:6px; margin:6px 0; }
 .toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .toolbar-actions { display:flex; gap:8px; }
 
-.grid { display:grid; gap:var(--gap); grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); }
+.grid { display:grid; gap:var(--gap); grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); border-top:1px solid #1a222d; padding-top: 12px; }
+.grid:empty {
+    display: none;
+}
 .card { position: relative; overflow: hidden; background:#12161c; border:1px solid #1a222d; border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; cursor:pointer; }
 .card .title { text-align:center; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card .actions { display:flex; gap:8px; justify-content:center; }
@@ -53,12 +162,9 @@ main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; pad
 .card .icon { font-size:22px; text-align:center; }
 .card .icon i.spin {
   animation: popOnce 280ms cubic-bezier(.2,.9,.2,1) 1 both; /* one-shot */
+  animation-delay: 150ms;
   transform-origin: 50% 50%;
   will-change: transform;
-}
-
-#sendEnter {
-    display: inline-block;
 }
 
 @keyframes popOnce {
@@ -94,7 +200,7 @@ main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; pad
 @keyframes cardFillFade {
   0%   { width: 0%;   opacity: 0;   }
   12%  { width: 12%;  opacity: .95; }
-  50%  { width: 100%; opacity: .95; }
+  50%  { width: 100%; opacity: .5; }
   100% { width: 100%; opacity: 0;   }
 }
 
@@ -112,6 +218,10 @@ label { display:flex; flex-direction:column; gap:6px; margin:6px 0; }
 
 /* Prevent iOS auto-zoom when focusing inputs */
 input, textarea, select { background:#0b1117; color:var(--fg); border:1px solid #1a222d; border-radius:8px; padding:8px; width:100%; font-size:16px; }
+input#sendEnter {
+    display: inline-block;
+    width: min-content;
+}
 
 /* composer */
 textarea#text { width:100%; min-height:80px; resize:vertical; }
@@ -137,7 +247,9 @@ menu { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
   bottom:0; width:min(920px, 100%); padding:12px 16px;
   border-top-left-radius:12px; border-top-right-radius:12px; border-bottom-left-radius:0; border-bottom-right-radius:0;
   border-top:1px solid #1a222d; border-bottom:none;
-  background:#0e1319f2; backdrop-filter:saturate(140%) blur(8px);
+  background:#0e1319f2;
+  backdrop-filter:saturate(140%) blur(6px);
+  -webkit-backdrop-filter:saturate(140%) blur(6px);
   box-shadow:0 -10px 30px #0006; z-index:10;
   padding-bottom:max(12px, env(safe-area-inset-bottom));
 }

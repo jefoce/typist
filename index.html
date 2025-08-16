@@ -10,28 +10,35 @@
 <body>
   <header class="topbar">
     <div class="left">
+      <button id="cheatBtn" class="icon-btn" title="Cheat sheet" aria-label="Cheat sheet">
+        <i class="fa-solid fa-circle-info"></i>
+      </button>
       <h1 class="appTitle">Typist</h1>
     </div>
-    <div class="center">
-      <span id="fsStats">—/— KB</span>
-    </div>
-    <div class="right">
-      <button id="connect" class="btn">Connect</button>
-    </div>
+    <div class="center"><span id="fsStats">—/— KB</span></div>
+    <div class="right"><button id="connect" class="btn">Connect</button></div>
   </header>
 
   <main>
-    <section class="startup panel">
-      <h2>Startup Macro</h2>
-      <div class="row">
-        <label for="startupSelect" class="inline">Use macro:</label>
-        <select id="startupSelect"></select>
-        <button id="saveStartupId">Save</button>
-      </div>
-      <div class="row">
-        <label for="startupScript" class="inline">Or custom script:</label>
-        <textarea id="startupScript" rows="3" placeholder="{{DELAY:1000}}{{CTRL+SHIFT+ESC}}"></textarea>
-        <button id="saveStartupScript">Save</button>
+    <section id="startupPanel" class="panel collapsible">
+      <input id="startupToggle" class="collapse-check" type="checkbox" />
+      <label class="collapse-bar" for="startupToggle">
+        <h2>Startup Macro</h2>
+        <i class="fa-solid fa-chevron-down chev" aria-hidden="true"></i>
+      </label>
+
+      <div class="collapse-body">
+        <div class="row">
+          <label for="startupSelect" class="inline">Use macro:</label>
+          <select id="startupSelect"></select>
+          <button id="saveStartupId">Save</button>
+        </div>
+        <br/>
+        <div class="row">
+          <label for="startupScript" class="inline">Or custom script:</label>
+          <textarea id="startupScript" rows="3" placeholder="{{DELAY:1000}}{{CTRL+SHIFT+ESC}}"></textarea>
+          <button id="saveStartupScript">Save</button>
+        </div>
       </div>
     </section>
 
@@ -84,6 +91,69 @@
         <button id="cancel" type="button">Cancel</button>
       </menu>
     </form>
+  </dialog>
+
+  <dialog id="cheatDialog" aria-labelledby="cheatTitle">
+    <h3 id="cheatTitle" style="margin:0 0 10px 0;">Macro Cheat Sheet</h3>
+
+    <div class="cheats">
+      <div class="cheat-grid">
+        <section>
+          <h4>Rules</h4>
+          <ul>
+            <li>Text outside <code>{{ }}</code> is typed literally.</li>
+            <li>Tokens are case-insensitive.</li>
+            <li>Combine modifiers with <code>+</code> inside one token (e.g. <code>{{CTRL+C}}</code>).</li>
+            <li>Delays are in ms (e.g. <code>{{DELAY:250}}</code>).</li>
+          </ul>
+        </section>
+
+        <section>
+          <h4>Commands</h4>
+          <ul>
+            <li><strong>DELAY: n</strong> — pause for <em>n</em> ms.</li>
+            <li><strong>TAP: KEY</strong> — press & release a key once. Example: TAP: ENTER, TAP: LEFT, TAP: F5.</li>
+            <li><strong>TAP: KEY*x</strong> — tap key <em>x</em> times (e.g. <code>TAP: DOWN*5</code>).</li>
+            <li><strong>DOWN: KEY</strong> — key down (hold until UP).</li>
+            <li><strong>UP: KEY</strong> — key up (release).</li>
+            <li><strong>HOLD / RELEASE</strong> — aliases for DOWN/UP (useful for modifiers like CTRL, SHIFT, ALT, GUI/WIN/CMD).</li>
+          </ul>
+        </section>
+
+        <section>
+          <h4>Modifiers</h4>
+          <p><code>CTRL</code>, <code>SHIFT</code>, <code>ALT</code>, <code>GUI</code>/<code>WIN</code>/<code>CMD</code></p>
+          <p>Examples: <code>{{CTRL+S}}</code>, <code>{{ALT+TAB}}</code>, <code>{{GUI+R}}</code></p>
+        </section>
+
+        <section>
+          <h4>Key families</h4>
+          <ul>
+            <li><strong>Enter & navigation:</strong> ENTER/RETURN, TAB, ESC, SPACE, UP/DOWN/LEFT/RIGHT, HOME, END, PGUP, PGDN</li>
+            <li><strong>Editing:</strong> BACKSPACE/BKSP, DELETE/DEL, INSERT, MENU/APP (context menu)</li>
+            <li><strong>System:</strong> CAPSLOCK, NUMLOCK, SCROLLLOCK, PRINTSCREEN/PRTSCR, PAUSE/BREAK</li>
+            <li><strong>Function:</strong> F1 … F24</li>
+            <li><strong>Numpad:</strong> KP0 … KP9, KPDOT, KPPLUS, KPMINUS, KPMULTIPLY, KPDIVIDE, KPENTER</li>
+          </ul>
+        </section>
+
+        <section class="span-2">
+          <h4>Examples</h4>
+          <pre>{{DELAY:400}}Hello world!{{ENTER}}
+  {{GUI+R}}notepad{{ENTER}}
+  {{CTRL+SHIFT+ESC}}
+  {{ALT+TAB}}{{DELAY:200}}{{ALT+TAB}}
+  {{CTRL+A}}{{DELETE}}
+  {{TAP: DOWN*5}}{{DELAY:150}}{{TAP: ENTER}}</pre>
+        </section>
+      </div>
+
+      <p class="muted">Tip: add small delays between UI steps if the target app is “too fast”.</p>
+    </div>
+
+    <menu>
+      <button type="button" data-close>Close</button>
+    </menu>
   </dialog>
 
   <div id="toast"></div>

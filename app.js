@@ -371,6 +371,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ui.newMacro) ui.newMacro.disabled = false;
     if (ui.refresh) ui.refresh.disabled = false;
 
+    const btn = document.getElementById('cheatBtn');
+    const dlg = document.getElementById('cheatDialog');
+    btn?.addEventListener('click', () => dlg?.showModal());
+    dlg?.addEventListener('click', (e) => {
+        if (e.target.matches('[data-close]')) dlg.close();
+    });
+
     // Wire handlers here to be 100% sure the elements exist
     ui.newMacro?.addEventListener('click', (e) => {
         e.preventDefault();
