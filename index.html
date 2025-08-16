@@ -103,20 +103,26 @@
           <ul>
             <li>Text outside <code>{{ }}</code> is typed literally.</li>
             <li>Tokens are case-insensitive.</li>
-            <li>Combine modifiers with <code>+</code> inside one token (e.g. <code>{{CTRL+C}}</code>).</li>
-            <li>Delays are in ms (e.g. <code>{{DELAY:250}}</code>).</li>
+            <li>Use <code>+</code> to chord modifiers, e.g. <code>{{CTRL+S}}</code>.</li>
+            <li>Delays are in milliseconds. Use <code>DELAY(ms)</code>.</li>
           </ul>
         </section>
 
         <section>
           <h4>Commands</h4>
           <ul>
-            <li><strong>DELAY: n</strong> — pause for <em>n</em> ms.</li>
-            <li><strong>TAP: KEY</strong> — press & release a key once. Example: TAP: ENTER, TAP: LEFT, TAP: F5.</li>
-            <li><strong>TAP: KEY*x</strong> — tap key <em>x</em> times (e.g. <code>TAP: DOWN*5</code>).</li>
-            <li><strong>DOWN: KEY</strong> — key down (hold until UP).</li>
-            <li><strong>UP: KEY</strong> — key up (release).</li>
-            <li><strong>HOLD / RELEASE</strong> — aliases for DOWN/UP (useful for modifiers like CTRL, SHIFT, ALT, GUI/WIN/CMD).</li>
+            <li><strong>DELAY(ms)</strong> — pause for <em>ms</em>. Example: <code>{{DELAY(250)}}</code></li>
+            <li><strong>RANDOM(min,max)</strong> — integer in <em>[min..max]</em>.
+              <br />Examples: <code>{{RANDOM(1,5)}}</code>, <code>{{DELAY(RANDOM(1000,5000))}}</code>
+            </li>
+            <li><strong>REPEAT(n, ...commands)</strong> — repeat the sequence <em>n</em> times.
+              <br />Example: <code>{{REPEAT(5, DELAY(1000), hello, ENTER)}}</code>
+            </li>
+            <li><strong>TEXT(...)</strong> — type the given text exactly. Example: <code>{{TEXT(Привіт світе)}}</code></li>
+            <li><strong>TAP(KEY)</strong> — press &amp; release once. Examples: <code>{{TAP(ENTER)}}</code>, <code>{{TAP(LEFT)}}</code>, <code>{{TAP(F5)}}</code></li>
+            <li><strong>TAP(KEY*x)</strong> — tap key <em>x</em> times. Example: <code>{{TAP(DOWN*5)}}</code></li>
+            <li><strong>DOWN(KEY)</strong> — key down (hold). <strong>UP(KEY)</strong> — key up (release).</li>
+            <li><strong>HOLD(KEY)</strong> / <strong>RELEASE(KEY)</strong> — aliases for <em>DOWN/UP</em>.</li>
           </ul>
         </section>
 
@@ -127,24 +133,25 @@
         </section>
 
         <section>
-          <h4>Key families</h4>
-          <ul>
-            <li><strong>Enter & navigation:</strong> ENTER/RETURN, TAB, ESC, SPACE, UP/DOWN/LEFT/RIGHT, HOME, END, PGUP, PGDN</li>
-            <li><strong>Editing:</strong> BACKSPACE/BKSP, DELETE/DEL, INSERT, MENU/APP (context menu)</li>
-            <li><strong>System:</strong> CAPSLOCK, NUMLOCK, SCROLLLOCK, PRINTSCREEN/PRTSCR, PAUSE/BREAK</li>
-            <li><strong>Function:</strong> F1 … F24</li>
-            <li><strong>Numpad:</strong> KP0 … KP9, KPDOT, KPPLUS, KPMINUS, KPMULTIPLY, KPDIVIDE, KPENTER</li>
-          </ul>
+          <h4>Keys</h4>
+          <p>Names: letters <code>A..Z</code>, digits <code>0..9</code>, arrows <code>LEFT/RIGHT/UP/DOWN</code>,
+            <code>ENTER</code>, <code>TAB</code>, <code>ESC</code>, <code>SPACE</code>, <code>BACKSPACE</code>,
+            <code>DELETE</code>, <code>HOME</code>, <code>END</code>, <code>PAGEUP</code>, <code>PAGEDOWN</code>,
+            function keys <code>F1..F24</code>, keypad <code>KP0..KP9</code>, <code>KPENTER</code>, etc.</p>
         </section>
 
-        <section class="span-2">
+        <section>
           <h4>Examples</h4>
-          <pre>{{DELAY:400}}Hello world!{{ENTER}}
-  {{GUI+R}}notepad{{ENTER}}
+          <pre class="block">
+  {{DELAY(300)}}hello{{ENTER}}
+
+  {{REPEAT(3, DELAY(RANDOM(50,150)), hello, SPACE, world, ENTER)}}
+
   {{CTRL+SHIFT+ESC}}
-  {{ALT+TAB}}{{DELAY:200}}{{ALT+TAB}}
-  {{CTRL+A}}{{DELETE}}
-  {{TAP: DOWN*5}}{{DELAY:150}}{{TAP: ENTER}}</pre>
+  {{ALT+TAB}}{{DELAY(200)}}{{ALT+TAB}}
+
+  {{TAP(DOWN*5)}}{{DELAY(150)}}{{TAP(ENTER)}}
+          </pre>
         </section>
       </div>
 

@@ -19,6 +19,9 @@ main {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 24px;                      /* gaps between sections */
@@ -30,8 +33,6 @@ h1 { margin:0; font-size:18px; }
 h2 { margin:0; font-size:16px; }
 button { background:#18202a; color:var(--fg); border:1px solid #263140; border-radius:8px; padding:8px 12px; cursor:pointer; }
 button:hover { border-color:var(--ac); }
-
-/* main { padding:16px; display:grid; gap:24px; max-width:920px; margin:0 auto; padding-bottom:calc(var(--dock-h) + 16px); } */
 
 /* Header colors from old */
 .topbar{
@@ -91,7 +92,8 @@ button:hover { border-color:var(--ac); }
 .cheats .muted{ color:#a9b0ba; opacity:.85; font-size:12px; margin-top:6px; }
 
 .cheat-grid{
-  display:grid;
+  display:flex;
+  flex-direction: column;
   grid-template-columns: 1fr 1fr;
   gap:12px 18px;
 }

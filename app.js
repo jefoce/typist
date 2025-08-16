@@ -546,6 +546,7 @@ async function sendText(raw) {
         const payload = (raw ?? ui.text.value ?? '') + (ui.sendEnter.checked ? '\n' : '');
         await writeLong(payload);
         lastChars = charCount(payload);
+        ui.text.value = '';
     } catch (e) {
         showToast(e?.message || String(e), 'error', true);
     }
@@ -556,6 +557,7 @@ async function replaceText(raw) {
         if (lastChars > 0) await writeLong(BS.repeat(lastChars));
         await writeLong(payload);
         lastChars = charCount(payload);
+        ui.text.value = '';
     } catch (e) {
         showToast(e?.message || String(e), 'error', true);
     }
