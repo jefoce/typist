@@ -1,33 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport"
-        content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <title>Typist</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>Typist — Macros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link href="style.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
 </head>
-
 <body>
-  <div class="page">
-    <header>
-      <h1>Typist</h1>
-      <p id="status">Not connected</p>
-    </header>
-
-    <div class="input-bar">
-      <textarea id="text" rows="4" placeholder="Type your message…"
-                autocapitalize="sentences" autocomplete="on" inputmode="text"
-                spellcheck="false"></textarea>
-
-      <div class="send-row">
-        <button id="send" disabled>Send</button>
-        <button id="sendReplace" disabled>Replace</button>
-        <button id="toggle" data-state="disconnected">🛜</button>
-      </div>
+  <header class="topbar">
+    <div class="left">
+      <h1 class="appTitle">Typist</h1>
     </div>
-  </div>
+    <div class="center">
+      <span id="fsStats">—/— KB</span>
+    </div>
+    <div class="right">
+      <button id="connect" class="btn">Connect</button>
+    </div>
+  </header>
 
-  <script type="module" src="app.js"></script>
+  <main>
+    <section class="startup panel">
+      <h2>Startup Macro</h2>
+      <div class="row">
+        <label for="startupSelect" class="inline">Use macro:</label>
+        <select id="startupSelect"></select>
+        <button id="saveStartupId">Save</button>
+      </div>
+      <div class="row">
+        <label for="startupScript" class="inline">Or custom script:</label>
+        <textarea id="startupScript" rows="3" placeholder="{{DELAY:1000}}{{CTRL+SHIFT+ESC}}"></textarea>
+        <button id="saveStartupScript">Save</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <h2>Macros</h2>
+        <div class="toolbar-actions">
+          <button id="newMacro"><i class="fa fa-plus"></i> New</button>
+          <button id="refresh"><i class="fa fa-rotate"></i> Refresh</button>
+        </div>
+      </div>
+      <div id="grid" class="grid"></div>
+    </section>
+  </main>
+
+  <!-- Docked Type & Send -->
+  <section id="dock" class="panel dock">
+    <h2>Type & Send</h2>
+    <textarea id="text" rows="3" placeholder="Type here… (supports {{MACRO}} tokens)"></textarea>
+    <div class="row sendbar">
+      <!-- keep checkbox + text on the LEFT, checked by default -->
+      <span class="inline">
+        <input type="checkbox" id="sendEnter" checked />
+        <span>
+          ↵ after send
+        </span>
+      </span>
+      <div class="spacer"></div>
+      <button id="send"><i class="fa fa-paper-plane"></i> Send</button>
+      <button id="sendReplace"><i class="fa fa-arrows-rotate"></i> Replace</button>
+    </div>
+  </section>
+
+  <dialog id="editor">
+    <form method="dialog" id="editorForm">
+      <input type="hidden" id="mId" />
+      <label>Title <input id="mTitle" required maxlength="24" /></label>
+
+      <!-- icon select instead of free text -->
+      <label>Icon
+        <div class="iconRow">
+          <select id="mIconSelect"></select>
+          <i id="iconPreview" class="fa-solid fa-bolt"></i>
+        </div>
+      </label>
+
+      <label>Script <textarea id="mScript" rows="6" placeholder="hello{{ENTER}}{{ALT+TAB}}"></textarea></label>
+      <menu>
+        <button id="save" type="submit" value="ok">Save</button>
+        <button id="cancel" type="button">Cancel</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <div id="toast"></div>
+  <script src="app.js"></script>
 </body>
 </html>
