@@ -83,24 +83,23 @@ function populateIconSelect(sel) {
 }
 // replace your runMacro with this version
 async function runMacro(cardEl, iconEl, script) {
-    cardEl?.classList.add('is-sending');
-    iconEl?.classList.add('spin');
+  if (cardEl?.classList.contains('is-sending')) return; // ← guard
 
-    const minSpin = delay(1000); // ensure spinner shows ≥ 1s
-    let err = null;
+  cardEl.classList.add('is-sending');
+  iconEl?.classList.add('spin');
 
-    try {
-        await writeLong(script);
-    } catch (e) {
-        err = e;
-    }
-    // wait out the minimum spin time regardless of writeLong result
-    await minSpin;
+  const minSpin = delay(1000);
+  let err = null;
+  try {
+      await writeLong(script);
+  } catch (e) {
+      err = e;
+  }
+  await minSpin;
 
-    iconEl?.classList.remove('spin');
-    cardEl?.classList.remove('is-sending');
-
-    if (err) showToast(err?.message || String(err), 'error', true);
+  iconEl?.classList.remove('spin');
+  cardEl.classList.remove('is-sending');
+  if (err) showToast(err?.message || String(err), 'error', true);
 }
 
 /* ---------- Toast (auto-dismiss 10s) ---------- */
@@ -580,7 +579,7 @@ function renderList(obj = {}) {
     for (const m of macros) {
         const card = document.createElement('div');
         card.className = 'card';
-        card.addEventListener('click', () => writeLong(m.script).catch((e) => showToast(String(e), 'error')));
+        card.addEventListener('click', () => runMacro(card, i, m.script));
 
         const icon = document.createElement('div');
         icon.className = 'icon';
@@ -608,7 +607,6 @@ function renderList(obj = {}) {
         };
         actions.append(edit, del);
 
-        card.addEventListener('click', () => runMacro(card, i, m.script));
         card.append(icon, title, actions);
         ui.grid?.appendChild(card);
 
