@@ -32,7 +32,17 @@ main {
 h1 { margin:0; font-size:18px; }
 h2 { margin:0; font-size:16px; }
 button { background:#18202a; color:var(--fg); border:1px solid #263140; border-radius:8px; padding:8px 12px; cursor:pointer; }
+button:disabled {
+  opacity: 0.6;
+}
 button:hover { border-color:var(--ac); }
+
+/* Lock the macro grid while a run is in progress */
+body.run-busy #grid { pointer-events: none; opacity: 0.6; }
+
+/* Simple spinner utility used on macro icons while sending */
+@keyframes spin { to { transform: rotate(1turn); } }
+.spin { animation: spin 1s linear infinite; }
 
 /* Header colors from old */
 .topbar{

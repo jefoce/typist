@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Typist — Macros</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link href="style.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
 </head>
@@ -46,6 +46,7 @@
       <div class="toolbar">
         <h2>Macros</h2>
         <div class="toolbar-actions">
+          <button id="stop" disabled><i class="fa fa-stop"></i> Stop</button>
           <button id="newMacro"><i class="fa fa-plus"></i> New</button>
           <button id="refresh"><i class="fa fa-rotate"></i> Refresh</button>
         </div>
@@ -143,14 +144,11 @@
         <section>
           <h4>Examples</h4>
           <pre class="block">
-  {{DELAY(300)}}hello{{ENTER}}
-
-  {{REPEAT(3, DELAY(RANDOM(50,150)), hello, SPACE, world, ENTER)}}
-
-  {{CTRL+SHIFT+ESC}}
-  {{ALT+TAB}}{{DELAY(200)}}{{ALT+TAB}}
-
-  {{TAP(DOWN*5)}}{{DELAY(150)}}{{TAP(ENTER)}}
+{{DELAY(300)}}hello{{ENTER}}
+{{REPEAT(3, DELAY(RANDOM(50,150)), hello, SPACE, world, ENTER)}}
+{{CTRL+SHIFT+ESC}}
+{{ALT+TAB}}{{DELAY(200)}}{{ALT+TAB}}
+{{TAP(DOWN*5)}}{{DELAY(150)}}{{TAP(ENTER)}}
           </pre>
         </section>
       </div>

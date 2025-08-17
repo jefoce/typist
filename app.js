@@ -21,6 +21,7 @@ const ui = {
     mScript: document.getElementById('mScript'),
     newMacro: document.getElementById('newMacro'),
     refresh: document.getElementById('refresh'),
+    stop: document.getElementById('stop'),
 
     startupSelect: document.getElementById('startupSelect'),
     startupScript: document.getElementById('startupScript'),
@@ -83,23 +84,24 @@ function populateIconSelect(sel) {
 }
 // replace your runMacro with this version
 async function runMacro(cardEl, iconEl, script) {
-  if (cardEl?.classList.contains('is-sending')) return; // ← guard
+    if (runState.busy || cardEl?.classList.contains('is-sending')) return;
+    beginRun();
 
-  cardEl.classList.add('is-sending');
-  iconEl?.classList.add('spin');
+    cardEl?.classList.add('is-sending');
+    iconEl?.classList.add('spin');
 
-  const minSpin = delay(1000);
-  let err = null;
-  try {
-      await writeLong(script);
-  } catch (e) {
-      err = e;
-  }
-  await minSpin;
+    const minSpin = delay(1000);
+    let err = null;
+    try {
+        await writeLong(script);
+    } catch (e) {
+        err = e;
+    }
+    await minSpin;
 
-  iconEl?.classList.remove('spin');
-  cardEl.classList.remove('is-sending');
-  if (err) showToast(err?.message || String(err), 'error', true);
+    iconEl?.classList.remove('spin');
+    cardEl?.classList.remove('is-sending');
+    if (err) showToast(err?.message || String(err), 'error', true);
 }
 
 /* ---------- Toast (auto-dismiss 10s) ---------- */
@@ -141,6 +143,11 @@ function showToast(msg, kind = 'info', persist = false) {
 })();
 
 /* ---------- UI helpers ---------- */
+// Keep Stop + grid lock consistent even if other UI code toggles controls
+function restoreBusyUI() {
+    if (ui.stop) ui.stop.disabled = !runState.busy;
+    document.body.classList.toggle('run-busy', runState.busy);
+}
 function setUiEnabled(r) {
     // Never disable New/Refresh; keep them interactive offline.
     [ui.send, ui.sendReplace, ui.saveStartupId, ui.saveStartupScript].forEach((el) => el && (el.disabled = !r));
@@ -191,6 +198,37 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 let writeChain = Promise.resolve();
+
+/* ---------- Run status (STOP/STATUS) ---------- */
+const runState = { busy: false, poll: 0, pending: false, pendingUntil: 0 };
+function setRunBusy(on) {
+    runState.busy = !!on;
+    if (ui.stop) ui.stop.disabled = !runState.busy;
+    document.body.classList.toggle('run-busy', runState.busy);
+}
+async function requestRunStatus() {
+    try {
+        await writeLong(':RUN:STATUS\n');
+    } catch {}
+}
+function startRunPolling() {
+    if (runState.poll) return;
+    runState.poll = setInterval(requestRunStatus, 600);
+    requestRunStatus();
+}
+function stopRunPolling() {
+    if (runState.poll) {
+        clearInterval(runState.poll);
+        runState.poll = 0;
+    }
+}
+/* Start a run immediately in the UI and keep it "pending" until we see STATUS=1 (or timeout) */
+function beginRun() {
+    setRunBusy(true);
+    runState.pending = true;
+    runState.pendingUntil = Date.now() + 6000; // ignore STATUS=0 for up to 6s unless we see STATUS=1
+    startRunPolling();
+}
 
 /* ---------- Clean disconnect helper ---------- */
 async function disconnectGattClean({ forget = false, dropAllGranted = false } = {}) {
@@ -248,6 +286,9 @@ async function _writeLongImpl(str) {
     }
 }
 function writeLong(str) {
+    const isRunPayload = typeof str === 'string' && !str.startsWith(':CFG:') && !str.startsWith(':RUN:');
+    if (isRunPayload) beginRun(); // Show Stop on FIRST macro/text send
+
     const job = () =>
         _writeLongImpl(str).catch((e) => {
             console.error('BLE write error:', e);
@@ -330,6 +371,8 @@ async function ensureConnected() {
 
 /* ---------- Disconnect / reconnect ---------- */
 function onDisconnect() {
+    setRunBusy(false);
+    stopRunPolling();
     setUiEnabled(false);
     rx = tx = svc = server = null;
     updateConnectUi();
@@ -351,6 +394,9 @@ function scheduleReconnect() {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
             await listMacros().catch(() => {});
+            try {
+                await requestRunStatus();
+            } catch {}
             return;
         } catch {
             reconnectDelay = Math.min(reconnectDelay * 1.6, 12000);
@@ -365,11 +411,25 @@ function scheduleReconnect() {
 /* ---------- Auto-restore on load ---------- */
 document.addEventListener('DOMContentLoaded', () => {
     // initial UI prep
+    setRunBusy(false);
     updateDockPadding();
     populateIconSelect(ui.mIconSelect);
     // ALWAYS enable New/Refresh
     if (ui.newMacro) ui.newMacro.disabled = false;
     if (ui.refresh) ui.refresh.disabled = false;
+
+    // Stop button
+    ui.stop?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            runState.pending = false; // don't ignore the next STATUS=0 after STOP
+            runState.pendingUntil = 0;
+            await writeLong(':RUN:STOP\n');
+            startRunPolling();
+        } catch (err) {
+            showToast(err?.message || String(err), 'error', true);
+        }
+    });
 
     const btn = document.getElementById('cheatBtn');
     const dlg = document.getElementById('cheatDialog');
@@ -387,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         try {
             await listMacros();
+            await requestRunStatus();
         } catch (err) {
             showToast('Connect first to refresh.', 'error');
         }
@@ -404,17 +465,23 @@ async function connect() {
         connecting = true;
         ui.connect.disabled = true;
         ui.connect.textContent = 'Connecting…';
-        setUiEnabled(false);
 
         device = await requestDeviceInteractive();
-        localStorage.setItem(REMEMBER_KEY, device.id);
+        localStorage.setItem('typist:deviceId', device.id);
         device.addEventListener('gattserverdisconnected', onDisconnect);
 
         server = await device.gatt.connect();
         await discoverGatt();
+
+        // Your existing UI resets:
         setUiEnabled(true);
         updateConnectUi();
+
+        // NEW: don't lose the Stop/busy state set by beginRun()
+        restoreBusyUI();
+
         await listMacros().catch(() => {});
+        await requestRunStatus(); // let firmware drive subsequent state
     } catch (e) {
         const persist = !isChooserCancel(e);
         showToast(e?.message || String(e), 'error', persist);
@@ -422,6 +489,8 @@ async function connect() {
         connecting = false;
         ui.connect.disabled = false;
         updateConnectUi();
+        // Also restore here in case the UI was re-touched in finally blocks
+        restoreBusyUI();
     }
 }
 ui.connect.addEventListener('click', async () => {
@@ -495,6 +564,34 @@ let lastCfgCmd = '';
 function onNotify(e) {
     const text = dec.decode(e.target.value);
 
+    if (text.startsWith(':RUN:OK')) {
+        // If it's START, we are definitely running now
+        if (text.indexOf('START') >= 0) {
+            setRunBusy(true);
+            startRunPolling();
+            return;
+        }
+        // STOP acknowledgement: polling will flip STATUS to 0 soon
+        if (text.indexOf('STOP') >= 0) {
+            // keep Stop enabled until STATUS 0 arrives
+            startRunPolling();
+            return;
+        }
+        // Any other OK — just ensure polling
+        startRunPolling();
+        return;
+    }
+    if (text.startsWith(':RUN:STATUS')) {
+        const v = (text.split(' ')[1] || '').trim();
+        const on = v.startsWith('1');
+        setRunBusy(on);
+        if (!on) stopRunPolling();
+        return;
+    }
+    if (text.startsWith(':RUN:ERR')) {
+        showToast(text, 'error', true);
+        return;
+    }
     if (text.startsWith(':CFG:LIST LEN=')) {
         cfgStart(text.split('=')[1] || '0');
         return;
@@ -517,13 +614,9 @@ function onNotify(e) {
 
     if (text.startsWith(':CFG:OK')) {
         if (lastCfgCmd && lastCfgCmd.startsWith('SET_STARTUP_SCRIPT')) {
-            try {
-                const sent =
-                    state.lastStartupScriptSent ??
-                    decodeURIComponent(lastCfgCmd.slice('SET_STARTUP_SCRIPT'.length).replace(/^\s+/, ''));
-                ui.startupScript.value = (sent || '').replace(/\r\n/g, '\n');
-                state.lastStartupScriptSent = null;
-            } catch {}
+            const sent = tryDecode(lastCfgCmd.slice('SET_STARTUP_SCRIPT '.length).replace(/^\s+/, ''));
+            ui.startupScript.value = (sent || '').replace(/\r\n/g, '\n');
+            state.lastStartupScriptSent = null;
         }
         listMacros().catch(() => {});
         return;
