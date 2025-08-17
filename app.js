@@ -637,7 +637,7 @@ const charCount = (s) => Array.from(s ?? '').length;
 async function sendText(raw) {
     try {
         const payload = (raw ?? ui.text.value ?? '') + (ui.sendEnter.checked ? '\n' : '');
-        await writeLong(payload);
+        await writeLong(`TEXT("${payload}")`);
         lastChars = charCount(payload);
         ui.text.value = '';
     } catch (e) {
@@ -647,8 +647,8 @@ async function sendText(raw) {
 async function replaceText(raw) {
     try {
         const payload = (raw ?? ui.text.value ?? '') + (ui.sendEnter.checked ? '\n' : '');
-        if (lastChars > 0) await writeLong(BS.repeat(lastChars));
-        await writeLong(payload);
+        if (lastChars > 0) await writeLong(`TEXT(${BS.repeat(lastChars)})`);
+        await writeLong(`TEXT("${payload}")`);
         lastChars = charCount(payload);
         ui.text.value = '';
     } catch (e) {

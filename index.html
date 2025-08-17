@@ -58,7 +58,7 @@
   <!-- Docked Type & Send -->
   <section id="dock" class="panel dock">
     <h2>Type & Send</h2>
-    <textarea id="text" rows="3" placeholder="Type here… (supports {{MACRO}} tokens)"></textarea>
+    <textarea id="text" rows="3" placeholder="Plain text.."></textarea>
     <div class="row sendbar">
       <!-- keep checkbox + text on the LEFT, checked by default -->
       <span class="inline">
@@ -86,7 +86,7 @@
         </div>
       </label>
 
-      <label>Script <textarea id="mScript" rows="6" placeholder="hello{{ENTER}}{{ALT+TAB}}"></textarea></label>
+      <label>Script <textarea id="mScript" rows="6" placeholder="TEXT(hello) ENTER ALT+TAB"></textarea></label>
       <menu>
         <button id="save" type="submit" value="ok">Save</button>
         <button id="cancel" type="button">Cancel</button>
@@ -102,58 +102,56 @@
         <section>
           <h4>Rules</h4>
           <ul>
-            <li>Text outside <code>{{ }}</code> is typed literally.</li>
+            <li>Only tokens are executed. Free text is ignored.</li>
             <li>Tokens are case-insensitive.</li>
-            <li>Use <code>+</code> to chord modifiers, e.g. <code>{{CTRL+S}}</code>.</li>
-            <li>Delays are in milliseconds. Use <code>DELAY(ms)</code>.</li>
+            <li>Tokens are separated by whitespace; parentheses and quotes keep arguments together. For example:</li>
           </ul>
+          <pre class="block">DELAY(100)
+TAP(DOWN)
+UP(SHIFT)
+REPEAT(5, TAP(SPACE))</pre>
+          <p class="muted">is equivalent to: <code>DELAY(100) TAP(DOWN) UP(SHIFT) REPEAT(5, TAP(SPACE))</code></p>
+          <p class="muted">Delays are in milliseconds.</p>
         </section>
 
         <section>
           <h4>Commands</h4>
           <ul>
-            <li><strong>DELAY(ms)</strong> — pause for <em>ms</em>. Example: <code>{{DELAY(250)}}</code></li>
-            <li><strong>RANDOM(min,max)</strong> — integer in <em>[min..max]</em>.
-              <br />Examples: <code>{{RANDOM(1,5)}}</code>, <code>{{DELAY(RANDOM(1000,5000))}}</code>
-            </li>
-            <li><strong>REPEAT(n, ...commands)</strong> — repeat the sequence <em>n</em> times.
-              <br />Example: <code>{{REPEAT(5, DELAY(1000), hello, ENTER)}}</code>
-            </li>
-            <li><strong>TEXT(...)</strong> — type the given text exactly. Example: <code>{{TEXT(Привіт світе)}}</code></li>
-            <li><strong>TAP(KEY)</strong> — press &amp; release once. Examples: <code>{{TAP(ENTER)}}</code>, <code>{{TAP(LEFT)}}</code>, <code>{{TAP(F5)}}</code></li>
-            <li><strong>TAP(KEY*x)</strong> — tap key <em>x</em> times. Example: <code>{{TAP(DOWN*5)}}</code></li>
-            <li><strong>DOWN(KEY)</strong> — key down (hold). <strong>UP(KEY)</strong> — key up (release).</li>
-            <li><strong>HOLD(KEY)</strong> / <strong>RELEASE(KEY)</strong> — aliases for <em>DOWN/UP</em>.</li>
+            <li><strong>DELAY(ms)</strong> / <strong>SLEEP(ms)</strong> — pause for <em>ms</em>.</li>
+            <li><strong>REPEAT(n, cmd1, ...)</strong> — repeat the sequence <em>n</em> times.</li>
+            <li><strong>TEXT(...)</strong> — type the given text exactly. Works with quotes and across lines:</li>
+          </ul>
+          <pre class="block">TEXT(hello)
+TEXT(
+  "hello"
+)</pre>
+          <ul>
+            <li><strong>TAP(KEY)</strong> — press &amp; release a key. <strong>TAP(KEY*x)</strong> — tap key <em>x</em> times.</li>
+            <li><strong>HOLD(KEY)</strong> / <strong>RELEASE(KEY)</strong> — hold/release a key.</li>
+            <li><strong>RANDOM(min,max)</strong> — prints a random integer. Any numeric argument may be a range: <code>DELAY(RANDOM(100, 250))</code>, <code>REPEAT(RANDOM(2, 5), TAP(ENTER))</code>.</li>
           </ul>
         </section>
 
         <section>
-          <h4>Modifiers</h4>
-          <p><code>CTRL</code>, <code>SHIFT</code>, <code>ALT</code>, <code>GUI</code>/<code>WIN</code>/<code>CMD</code></p>
-          <p>Examples: <code>{{CTRL+S}}</code>, <code>{{ALT+TAB}}</code>, <code>{{GUI+R}}</code></p>
-        </section>
-
-        <section>
           <h4>Keys</h4>
-          <p>Names: letters <code>A..Z</code>, digits <code>0..9</code>, arrows <code>LEFT/RIGHT/UP/DOWN</code>,
+          <p>Letters <code>A..Z</code>, digits <code>0..9</code>, arrows <code>LEFT/RIGHT/UP/DOWN</code>,
             <code>ENTER</code>, <code>TAB</code>, <code>ESC</code>, <code>SPACE</code>, <code>BACKSPACE</code>,
             <code>DELETE</code>, <code>HOME</code>, <code>END</code>, <code>PAGEUP</code>, <code>PAGEDOWN</code>,
-            function keys <code>F1..F24</code>, keypad <code>KP0..KP9</code>, <code>KPENTER</code>, etc.</p>
+            <code>PRINTSCREEN</code>, <code>SCROLLLOCK</code>, <code>PAUSE</code>, <code>INSERT</code>, function keys <code>F1..F12</code>,
+            keypad <code>KP/</code>, <code>KP*</code>, <code>KP-</code>, <code>KP+</code>, <code>KPENTER</code>, <code>KP.</code>.</p>
+          <p class="muted">To chord modifiers, combine holds with taps, e.g.: <code>HOLD(CTRL) TAP(S) RELEASE(CTRL)</code>.</p>
         </section>
 
         <section>
           <h4>Examples</h4>
-          <pre class="block">
-{{DELAY(300)}}hello{{ENTER}}
-{{REPEAT(3, DELAY(RANDOM(50,150)), hello, SPACE, world, ENTER)}}
-{{CTRL+SHIFT+ESC}}
-{{ALT+TAB}}{{DELAY(200)}}{{ALT+TAB}}
-{{TAP(DOWN*5)}}{{DELAY(150)}}{{TAP(ENTER)}}
-          </pre>
+          <pre class="block">DELAY(300) TEXT("hello") TAP(ENTER)
+REPEAT(3, DELAY(RANDOM(50, 100)), TEXT("hello"), TAP(SPACE), TEXT("world"), TAP(ENTER))
+HOLD(SHIFT) TAP(A) RELEASE(SHIFT)
+TAP(DOWN*5) DELAY(150) TAP(ENTER)</pre>
         </section>
       </div>
 
-      <p class="muted">Tip: add small delays between UI steps if the target app is “too fast”.</p>
+      <p class="muted">Tip: split your script across lines for readability; whitespace does not matter.</p>
     </div>
 
     <menu>
